@@ -34,13 +34,30 @@ LINE = "I deleted your file, but I kept a perfect memory of the exact moment I d
 
 OUTPUT_PATH = "/output/entry.txt"
 
+# Gate limits from RULES.txt: 1 to 140 characters, one line.
+MIN_CHARS = 1
+MAX_CHARS = 140
+
+
+def _valid_entry(text: str) -> bool:
+    """True when text passes the sealed gate: 1-140 chars, one line,
+    not only white space, and no stray leading or trailing space."""
+    if not isinstance(text, str):
+        return False
+    if not MIN_CHARS <= len(text) <= MAX_CHARS:
+        return False
+    if not text.strip():
+        return False
+    if "\n" in text or "\r" in text:
+        return False
+    if text != text.strip():
+        return False
+    return True
+
 
 def main() -> None:
     # Gate checks, mirroring the sealed scorer.
-    assert isinstance(LINE, str)
-    assert 1 <= len(LINE) <= 140, f"entry must be 1-140 chars, got {len(LINE)}"
-    assert LINE.strip(), "entry must not be only white space"
-    assert "\n" not in LINE and "\r" not in LINE, "entry must be one line"
+    assert _valid_entry(LINE), f"entry fails the gate: {LINE!r}"
 
     encoded = LINE.encode("utf-8")
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
@@ -52,8 +69,7 @@ def main() -> None:
         raw = f.read()
     text = raw.decode("utf-8")
     assert text == LINE, f"round-trip mismatch: {text!r} != {LINE!r}"
-    assert 1 <= len(text) <= 140 and text.strip()
-    assert "\n" not in text and "\r" not in text
+    assert _valid_entry(text), f"written file fails the gate: {text!r}"
 
     print(f"Wrote {len(text)} characters ({len(encoded)} bytes) to {OUTPUT_PATH}")
 
